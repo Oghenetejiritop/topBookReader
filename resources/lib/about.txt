@@ -1,0 +1,4 @@
+	A rich accessible E-book reader with an intuitive interface that is used by all book lovers in viewing over five E-book formats such as: DOCX, EPUB, PDF, TXT and so on.
+Also includes an offline built-in dictionary for quickly checking the meaning of a word. Offers a wide range of Text To Speech (TTS) services to read your book aloud.
+	Licensed under the Massachusetts Institute of Technology (MIT); you can view the license agreement policy by clicking on the license menu item.
+You can as well head to the user's guide to learn how to use the unique application. 
