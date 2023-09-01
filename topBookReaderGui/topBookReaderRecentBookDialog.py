@@ -1,5 +1,14 @@
 
-#dialog for the recent books opened
+'''
+* Coding: UTF-8
+* Author: Oghenetejiri Peace Onosajerhe (peaceonosajerhe@gmail.com).
+* topBookReaderRecentBooksDialog.py
+* A part of TOP BOOK Reader.
+* Licensed under the Massachusetts Institute of Technology (MIT);
+* Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
+'''
+
+
 from os import path
 
 import wx
@@ -13,20 +22,27 @@ def showMessage(msg):
     dlg.ShowModal()
     dlg.Destroy()
 
-
+#dialog for the recent documents opened
 class TopBookReaderRecentBooksDialog(wx.Dialog):
+    '''
+    this class presents the app with recently opened documents
+    Accepts three parameters;
+    parent: that requires the topBookReaderPanel object.
+    bookFile: requires the FileValidator object
+    list: takes the UniqueList object as an argument
+    '''
 
     def __init__(self, parent, bookFile, list):
         super().__init__(None, wx.ID_ANY, title='Recent Books')
 
-        #the vertical sizer for the Components
+        #instantiate the vertical box sizer for the components
         self.__vSizer = wx.BoxSizer(wx.VERTICAL)
 
         self.__parent = parent
         self.__bookFile = bookFile
         self.__list = list
         self.__dictPaths = self.__parent.getRecentBookInfo()
-        self.__dictBookmarks = self.__parent.getBookmarks()
+        self.__dictBookmarks = self.__parent.getBookmarks()    #stores the bookmark history
 
         self.__label = wx.StaticText(self, -1, 'Select an item')
         self.__listDisplay = ListDisplay(self, 'S/N', 'File Name', 'File Path')    #instantiate the ListDisplay object to show recently opened books.
@@ -40,7 +56,8 @@ class TopBookReaderRecentBooksDialog(wx.Dialog):
 
 
     #methods defined
-    #insert default item to the list display if not empty
+
+    #method that inserts default item to the list display if not empty
     def __insertDefaultItem(self):
         self.__listDisplay.DeleteAllItems()
         #insert the serialNumber, file name and path to their respective columns
@@ -54,19 +71,22 @@ class TopBookReaderRecentBooksDialog(wx.Dialog):
         self.__listDisplay.Focus(0)
         self.__listDisplay.Select(0, True)
 
-    #structure for each button property
+    #method that returns the (label and event handler) for each button  
     def __buttonInfo(self):
         return (
         ('&Open item', self.on_open),
-        ('&Delete item', self.on_delete),
+        ('&Remove item', self.on_delete),
         ('&Clear all', self.on_clear),
         )
 
+    #method that implements the button component; 
+    #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
     def __implementBtn(self, id, label, evtHandler):
         btn = wx.Button(self, id, label, pos=(100, 50), size=(200, 500))
         self.Bind(wx.EVT_BUTTON, evtHandler, btn)
         return btn
 
+    #the method that displays the button to the screen
     def __showBtn(self):
         #determine the state of the buttons if the list is empty or not
         emptyDecider = False if self.__list.isEmpty() else True
@@ -81,6 +101,7 @@ class TopBookReaderRecentBooksDialog(wx.Dialog):
         self.SetSizer(self.__vSizer)
 
     #method that handles deletion of an item
+    #accepts two parameters index (int) and filePathKey (dictionary key)
     def __delete(self, index, filePathKey):
         self.__listDisplay.DeleteItem(index)    #delete selected item from the list box
         self.__list.delete(index)

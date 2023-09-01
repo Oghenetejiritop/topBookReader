@@ -1,8 +1,23 @@
 
-#dialog box for the voice settings
+'''
+* Coding: UTF-8
+* Author: Oghenetejiri Peace Onosajerhe (peaceonosajerhe@gmail.com).
+* topBookReaderVoiceAdjustmentDialog.py
+* A part of TOP BOOK Reader.
+* Licensed under the Massachusetts Institute of Technology (MIT);
+* Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
+'''
+
+
 import wx
 
+#dialog for the voice settings
 class TopBookReaderVoiceAdjustmentDialog(wx.Dialog):
+    '''
+    this class handles the settings of the text to speech synthesizers
+    Has one parameter (parent) that requires the topBookReaderPanel object.
+    '''
+
     def __init__(self, parent):
         super().__init__(None, wx.ID_ANY, title='Voice Adjustment Settings')
 

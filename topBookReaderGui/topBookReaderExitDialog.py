@@ -11,7 +11,7 @@
 
 import wx
 
-#dialog for the exitting option
+#dialog for the exitting action
 class TopBookReaderExitDialog(wx.Dialog):
     '''
     this class pops up with the confirming message; (Yes, No and Cancel buttons) in order to exit the app.
@@ -40,7 +40,7 @@ class TopBookReaderExitDialog(wx.Dialog):
         )
 
     #method that implements the button component; 
-    #accepts three parameters: id ( id reference), label (str) and evtHandler (event handler)
+    #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
     def __implementBtn(self, id, label, evtHandler):
         btn = wx.Button(self, id, label)    #stores the button object
         self.Bind(wx.EVT_BUTTON, evtHandler, btn)

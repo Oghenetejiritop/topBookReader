@@ -1,15 +1,32 @@
 
+'''
+* Coding: UTF-8
+* Author: Oghenetejiri Peace Onosajerhe (peaceonosajerhe@gmail.com).
+* topBookReaderSupport.py
+* A part of TOP BOOK Reader.
+* Licensed under the Massachusetts Institute of Technology (MIT);
+* Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
+'''
+
+
 #module with supportive classes
+
+from threading import Event, Thread
+from time import sleep
 from wx import FontData
 
 class UniqueList:
     '''
-    a list that functions like a set (stores only unique items).
+    this class functions like a set (stores only unique items).
+    Accepts two parameters;
+    bookFile: requires the FileValidator object
+    list: takes a List as an argument
     '''
 
     def __init__(self, bookFile, list):
-        self.__list = list
+
         self.__bookFile = bookFile
+        self.__list = list
 
     def append(self, item):    #append item to the list uniquely
         #remove an existing item from the list and inserts it at position 0
@@ -41,6 +58,52 @@ class UniqueList:
 
     def output(self):    #return the list
         return self.__list
+
+
+#customising the python thread
+class ThreadControls(Thread):
+    '''
+    this class extends from the Thread class; enabling it to handle pause and resume functions.
+    Accepts three parameters;
+    target: requires a function.
+    args: requires the list of arguments of the function.
+    btn: requires the wx.Button object
+    '''
+
+    def __init__(self, target=None, args=(), btn=None):
+        super().__init__(group=None, target=None, name=None, args=(), kwargs=None,daemon=True)
+
+        self.__target = target
+        self.__targs=args[0]
+        self.__btn = btn
+        self.__event = Event()    #instantiates the Event object
+
+    #overwrite the run method of the Thread class
+    def run(self):
+        self.__btn.SetLabel('&Pause')    #changes the btn label to pause
+        i = 0
+        while True:
+            #pause the thread operation and resets i to 0 when i is equivalent to the length of targs
+            if i == len(self.__targs):
+                i = 0
+                self.pause()
+
+            #sleep for a second if the event is set
+            if self.__event.is_set():
+                sleep(1)
+            else:    #otherwise, invoke the targeted function
+                self.__target(self.__targs[i])
+                i+=1
+
+    #method that resumes the operation when the event is cleared
+    def resume(self):
+        self.__event.clear()
+        self.__btn.SetLabel('&Pause')    #changes the btn label to pause
+
+    #the method that pauses the operation when the event is set
+    def pause(self):#for the content display 
+        self.__event.set()
+        self.__btn.SetLabel('&Play Aloud')    #changes the btn label to play
 
 
 #class for the font data serialization

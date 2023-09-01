@@ -85,7 +85,7 @@ class TopBookReaderBookmarkListDialog(wx.Dialog):
         )
 
     #method that implements the button component; 
-    #accepts three parameters: id ( id reference), label (str) and evtHandler (event handler)
+    #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
     def __implementBtn(self, id, label, evtHandler):
         btn = wx.Button(self, id, label, pos=(100, 50), size=(200, 500))
         self.Bind(wx.EVT_BUTTON, evtHandler, btn)

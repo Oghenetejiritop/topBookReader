@@ -1,5 +1,13 @@
 
-#for the file validation
+'''
+* Coding: UTF-8
+* Author: Oghenetejiri Peace Onosajerhe (peaceonosajerhe@gmail.com).
+* fileValidator.py
+* A part of TOP BOOK Reader.
+* Licensed under the Massachusetts Institute of Technology (MIT);
+* Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
+'''
+
 
 from topBookReaderGui.topBookReaderBookFormats.abstractBookFormat import AbstractBookFormat
 from topBookReaderGui.topBookReaderBookFormats.topBookReaderDocx import TopBookReaderDocx
@@ -8,8 +16,9 @@ from topBookReaderGui.topBookReaderBookFormats.topBookReaderPdf import TopBookRe
 from topBookReaderGui.topBookReaderBookFormats.topBookReaderRtf import TopBookReaderRtf
 from topBookReaderGui.topBookReaderBookFormats.topBookReaderTxt import TopBookReaderTxt
 
-
+#for the file validation
 class FileValidator(AbstractBookFormat):
+    '''  this class extends from the AbstractBookFormat class; enabling it to handle various document formats with their respective file objects.  '''
 
     def __init__(self):
         super().__init__()
@@ -23,6 +32,7 @@ class FileValidator(AbstractBookFormat):
         }
 
     #overwrite the insertFile method
+    #accepts one parameter: file (str)
     def insertFile(self, file):
         super().insertFile(file)
         self.__currentFile = self.__fileExtensions[self.getFileExtension()](self.getFileSource())
@@ -40,6 +50,7 @@ class FileValidator(AbstractBookFormat):
         return self.__currentFile.nextPage()
 
     #set a new page number
+    #accepts one parameter: number (int)
     def setPageNumber(self, number):
         self.__currentFile.setPageNumber(number)
 

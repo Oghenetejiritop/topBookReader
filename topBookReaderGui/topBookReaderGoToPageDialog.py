@@ -1,16 +1,31 @@
 
-#dialog for navigating to a specific page
+'''
+* Coding: UTF-8
+* Author: Oghenetejiri Peace Onosajerhe (peaceonosajerhe@gmail.com).
+* topBookReaderGoToPageDialog.py
+* A part of TOP BOOK Reader.
+* Licensed under the Massachusetts Institute of Technology (MIT);
+* Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
+'''
+
+
 import wx
 
+#dialog for navigating to a specific page
 class TopBookReaderGoToPageDialog(wx.Dialog):
+    '''
+    this class presents the go to page feature
+    Has  a parameter (parent)  that requires the topBookReaderPanel object.
+    '''
 
     def __init__(self, parent):
         super().__init__(None, title='Select A Page')
 
         self.__parent = parent
-        self.__displayedContent = self.__parent.pnl.cloneDisplayedText()    #get a referense to the app displayedText component
+        self.__displayedContent = self.__parent.pnl.cloneDisplayedText()    #gets the reference to the displayedContent component of the app
         self.__bookPageInfo = self.__parent.pnl.getPageInfo()    #store both the current page number and the total pages.
 
+        #instantiate the vertical box sizer
         vSizer = wx.BoxSizer(wx.VERTICAL)
 
         pnl = wx.Panel(self)
@@ -35,6 +50,8 @@ class TopBookReaderGoToPageDialog(wx.Dialog):
         pnl.SetSizer(vSizer)
 
     #event associated with this class
+
+    #event that performs the goto page action
     def on_goToPageNumber(self, event):
         pageNumber = int(self.__pageNumberEntry.GetValue())    #convert the value of the pageNumberEntry to int, and store it.
         #open the specified page if it is within the range of pages

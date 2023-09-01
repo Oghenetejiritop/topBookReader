@@ -17,7 +17,7 @@ from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import topBookReader
 class TopBookReaderContentDisplay(wx.TextCtrl):
     '''
     this class displays contents to the screen.
-    Accepts  two parameters
+    Accepts  two parameters;
     parent: that requires the topBookReaderPanel object.
     topBookReaderDirectory: takes the path of the topBookReaderFont (str).
     '''
