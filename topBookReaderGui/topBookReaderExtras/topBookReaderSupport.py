@@ -10,10 +10,11 @@
 
 
 #module with supportive classes
-
 from threading import Event, Thread
 from time import sleep
-from wx import FontData
+from wx import Bitmap, BITMAP_TYPE_PNG
+
+from topBookReaderGui.topBookReaderExtras.topBookReaderTts import textToSpeech as tts
 
 class UniqueList:
     '''
@@ -61,20 +62,22 @@ class UniqueList:
 
 
 #customising the python thread
-class ThreadControls(Thread):
+class SpeechThreadControls(Thread):
     '''
-    this class extends from the Thread class; enabling it to handle pause and resume functions.
-    Accepts three parameters;
+    this class extends from the Thread class; enabling it to handle pause and resume functions on the text to speech function.
+    Accepts four parameters;
     target: requires a function.
-    args: requires the list of arguments of the function.
+    args: requires list of function arguments.
     btn: requires the wx.Button object
+    winReg: requires the windows registry object
     '''
 
-    def __init__(self, target=None, args=(), btn=None):
+    def __init__(self, target=None, args=(), btn=None, winReg=None):
         super().__init__(group=None, target=None, name=None, args=(), kwargs=None,daemon=True)
 
-        self.__target = target
-        self.__targs=args[0]
+        self.__target = target    #holds the targeted function
+        self.__targ1 = args[0]    #stores the first argument
+        self.__winReg = winReg
         self.__btn = btn
         self.__event = Event()    #instantiates the Event object
 
@@ -83,8 +86,8 @@ class ThreadControls(Thread):
         self.__btn.SetLabel('&Pause')    #changes the btn label to pause
         i = 0
         while True:
-            #pause the thread operation and resets i to 0 when i is equivalent to the length of targs
-            if i == len(self.__targs):
+            #pause the thread operation and resets i to 0 when i is equivalent to the length of targ1
+            if i == len(self.__targ1):
                 i = 0
                 self.pause()
 
@@ -92,21 +95,34 @@ class ThreadControls(Thread):
             if self.__event.is_set():
                 sleep(1)
             else:    #otherwise, invoke the targeted function
-                self.__target(self.__targs[i])
+                self.__functionNotifier()
+                self.__target(self.__targ1[i], self.__targ2, self.__targ3, self.__targ4)
                 i+=1
 
     #method that resumes the operation when the event is cleared
     def resume(self):
         self.__event.clear()
+        icon = Bitmap('resources/icons/pause.png', BITMAP_TYPE_PNG)
+        self.__btn.SetBitmap(icon)
         self.__btn.SetLabel('&Pause')    #changes the btn label to pause
 
     #the method that pauses the operation when the event is set
-    def pause(self):#for the content display 
+    def pause(self):
         self.__event.set()
+        icon = Bitmap('resources/icons/play.png', BITMAP_TYPE_PNG)
+        self.__btn.SetBitmap(icon)
         self.__btn.SetLabel('&Play Aloud')    #changes the btn label to play
 
-
-#class for the font data serialization
-class SerializedFontData:
-        fontData = FontData()
-
+    #method that notifies for a function update
+    def __functionNotifier(self):
+        from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import createTopBookReaderKeys
+        #invoke the createKeys function
+        voiceKey = createTopBookReaderKeys(self.__winReg, path='voices')
+        #update the last three arguments of the targeted function
+        name, rate, volume = self.__winReg.QueryValueEx(voiceKey, 'name')[0], self.__winReg.QueryValueEx(voiceKey, 'rate')[0], self.__winReg.QueryValueEx(voiceKey, 'volume')[0]
+        #invoke the tts function
+        speech = tts()
+        speechOutput = speech[name]
+        self.__targ2 = speechOutput[1]
+        self.__targ3 = rate
+        self.__targ4 = volume

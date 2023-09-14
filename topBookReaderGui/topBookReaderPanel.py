@@ -13,10 +13,17 @@ cd topBookReader
 py topBookReader.py
 '''
 
-from os import path
 
-import wx
-from wx.adv import Sound
+from os import path
+import winreg
+
+from  wx import (AcceleratorTable, AcceleratorEntry, ACCEL_NORMAL,
+    Bitmap, BITMAP_TYPE_PNG,
+    BoxSizer, ALL, CENTER,  VERTICAL, 
+    Button, BU_EXACTFIT, EVT_BUTTON,
+    Panel, StaticText,
+    WXK_DOWN, WXK_LEFT, WXK_RIGHT, WXK_UP, EVT_KEY_DOWN,)
+from  wx.adv import Sound
 
 from topBookReaderGui.topBookReaderContentDisplay  import TopBookReaderContentDisplay
 from topBookReaderGui.topBookReaderRecentBookDialog import TopBookReaderRecentBooksDialog
@@ -24,32 +31,37 @@ from topBookReaderGui.topBookReaderVoiceAdjustmentDialog import TopBookReaderVoi
 
 from topBookReaderGui.topBookReaderBookFormats.fileValidator import FileValidator
 
-from topBookReaderGui.topBookReaderExtras.topBookReaderSupport import UniqueList, ThreadControls
-from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import topBookReaderPath, createTopBookReaderPaths, textToSpeech as tts
+from topBookReaderGui.topBookReaderExtras.topBookReaderSupport import UniqueList, SpeechThreadControls
+from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import (topBookReaderPath, 
+    createTopBookReaderPaths,
+    createTopBookReaderKeys)
+from topBookReaderGui.topBookReaderExtras.topBookReaderTts import nvdaSpeak, textToSpeech as tts
 
-#set the paths
+#set the paths and registration keys
 homeDirectory = path.expanduser('~').replace('\\', '/')
 topBookReaderDirectory =f'{homeDirectory}/.topBookReader/topBookReaderLib'
 createTopBookReaderPaths(topBookReaderDirectory)    #creates the topBookReader paths
+    #create the registry key of topBookReader
+key=createTopBookReaderKeys(winreg)
 
 #alias the path.exists function
 isExistingPath = path.exists
 
 #variable that holds the default displayed text 
-defaultValue = '''  Welcome to the TOP Book Reader; an accessible E-Book reader which presents users with an intuitive interface that enables you to access any book in various electronic formats.
+defaultValue = '''  Welcome to the TOP Book Reader.  
+    An accessible E-Book reader that presents book lovers with an intuitive interface which enables readers to access any document in various electronic formats.
 Head to the Help menu item to learn more about it.
-Happy reading, ENJOY!
-        '''
+Happy reading, ENJOY!'''
 
 #panel for the application
-class TopBookReaderPanel(wx.Panel):
+class TopBookReaderPanel( Panel):
     '''
     this class handles the rendering of the document basic controls which include: (the display content text area, previous with next page button, play button and some components)
     Has  a parameter (parent)  that requires the topBookReaderFrame object.
     '''
 
     def __init__(self, parent):
-        super().__init__(parent, wx.ID_ANY)
+        super().__init__(parent,  -1)
 
         self.__parent = parent
         self.__statusBar = self.__parent.CreateStatusBar()    #instantiates the status bar object
@@ -58,22 +70,24 @@ class TopBookReaderPanel(wx.Panel):
         self.__list = UniqueList(self.__bookFile, self.getRecentList())    #instantiates the UniqueList object
         self.__bookInfo = self.getRecentBookInfo()    #stores the dictionary of each recent book information 
 
-        self.__sound = Sound('resources/sounds/page_navigation.wav')    #inserts the sound file for page navigation.
+        self.__sound = Sound('resources/sounds/pageFlipper.wav')    #inserts the sound file for page navigation.
 
-        self.__label = wx.StaticText(self, wx.ID_ANY, 'Display Content')
+        self.__label =  StaticText(self,  -1, 'Display Content')
         self.__displayedText = TopBookReaderContentDisplay(self, topBookReaderDirectory)    #instantiates the TopBookReaderContentDisplay object
         #show the default content
         self.displayDefaultValue()
+        #bind the key navigation event handler
+        self.__displayedText.Bind(EVT_KEY_DOWN, self.on_keyNavigation, )
 
         #instantiate the vertical box sizer for the buttons
-        self.__vSizer = wx.BoxSizer(wx.VERTICAL)
+        self.__vSizer =  BoxSizer( VERTICAL)
 
         #make the buttons visible
         self.__showBtn()
         self.__readAloudBtn = self.__btnList[1]    #stores the play/pause button object
 
         #set keyboard shortcuts
-        btnShortcuts = wx.AcceleratorTable(self.__btnEntries)
+        btnShortcuts =  AcceleratorTable(self.__btnEntries)
         self.SetAcceleratorTable(btnShortcuts)
 
         self.updateStatusBar()    #updates the statusbar information
@@ -85,50 +99,44 @@ class TopBookReaderPanel(wx.Panel):
     def cloneDisplayedText(self):    #return a reference of the display content
         return self.__displayedText
 
-    #method that returns the label and event handler of each button  
+    #method that returns the label,icon and event handler of each button  
     def __buttonInfo(self):
         return (
-        ('Previous Page (P)', self.on_prvPage),
-        ('&Play Aloud', self.on_playAloud),
-        ('Next Page (N)', self.on_nxtPage),
-        ('&Recent Opened Books...', self.on_recentBooks),
-        ('&Voice Adjustment Setting...', self.on_voiceAdjustment)
+        ('Previous Page (P)', 'previous', self.on_prvPage),
+        ('&Play Aloud', 'play', self.on_playAloud),
+        ('Next Page (N)', 'next', self.on_nxtPage),
+        ('&Recently Opened Books...', 'recent', self.on_recentBooks),
+        ('&Voice Adjustment Setting...', 'textToSpeech', self.on_voiceAdjustment)
         )
 
     #method that implements the button component; 
-    #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
-    def __implementBtn(self, id, label, evtHandler):
-        btn = wx.Button(self, id, label, style=wx.BU_EXACTFIT)
-        self.Bind(wx.EVT_BUTTON, evtHandler, btn)
+    #accepts four parameters: id ( -1), label (str), icon (bitmap icon)  and evtHandler (event handler)
+    def __implementBtn(self, id, label, icon, evtHandler):
+        btn =  Button(self, id, label, style= BU_EXACTFIT)
+        bmp =  Bitmap(f'resources/icons/{icon}.png',  BITMAP_TYPE_PNG)
+        btn.SetBitmap(bmp)
+        self.Bind( EVT_BUTTON, evtHandler, btn)
         return btn
 
     #the method that displays the button to the screen
     def __showBtn(self):
-        i = j = 0    #serves as counters 
-        pngFiles = ('previous', 'play', 'next')    #store the btn icons in a tuple
+        i = 0    #serves as a counter
         self.__btnList = []    #a list that will hold each button object
-        #set the entries for the page navigation key's shortcuts
-        self.__btnEntries = [wx.AcceleratorEntry(), wx.AcceleratorEntry()]
+        #set the entries for the page navigation shortcuts
+        self.__btnEntries = [ AcceleratorEntry(),  AcceleratorEntry()]
 
         #unpack the __buttonInfo
-        for label, evtHandler in self.__buttonInfo():
-            btn = self.__implementBtn(wx.ID_ANY, label, evtHandler)
+        for label, icon, evtHandler in self.__buttonInfo():
+            btn = self.__implementBtn( -1, label, icon, evtHandler)
             self.__btnList.append(btn)    #appends the current btn object
 
             #set the shortcut keys (n and p) for both the previous and next buttons
             if(label.endswith(')')):
-                self.__btnEntries[i].Set(wx.ACCEL_NORMAL, ord(label[0]), btn.GetId())
+                self.__btnEntries[i].Set( ACCEL_NORMAL, ord(label[0]), btn.GetId())
                 i += 1    #increments i by 1
 
             #add each button to the vSizer
-            self.__vSizer.Add(btn, 0, wx.ALL | wx.CENTER, 5)
-
-        #insert the button icons
-        for icon in pngFiles:
-            bmp = wx.Bitmap(f'resources/images/{icon}.png', wx.BITMAP_TYPE_PNG)
-            self.__btnList[j].SetBitmap(bmp)
-            j += 1    #increments j by 1
-
+            self.__vSizer.Add(btn, 0,  ALL |  CENTER, 5)
         self.__vSizer.SetSizeHints(self)
         self.SetSizer(self.__vSizer)
 
@@ -167,7 +175,8 @@ class TopBookReaderPanel(wx.Panel):
 
         #update the statusbar by displaying the page number or an open a document message if the list is empty
         statusValue = 'You can open a document by clicking on ctrl + o!' if self.__list.isEmpty() else f'Page {bookPageInfo[0]} Of {bookPageInfo[1]} Pages'
-        self.__statusBar.SetStatusText(statusValue)
+        nvdaSpeak(statusValue)
+        self.__statusBar.SetStatusText(statusValue)    #speaks out the status info
         #set the readAloud and noSwitchedPage flags to false
         self.__readAloud= self.__noSwitchedPage = False
 
@@ -252,47 +261,51 @@ class TopBookReaderPanel(wx.Panel):
         return len(self.__parent.GetTitle()) == 15    #returns bool
 
 
-    #method that handles the page navigation rendering
-    #accepts one parameter: page (str)
-    def pageNavigator(self, page):
+    #events associated with this class
+
+    #method that handles the page navigation rendering event
+    #accepts two parameters: page (str) and pos (int)
+    def pageNavigator(self, page, pos=0):
         #play the page sound if page switches
         self.__sound.Play()
-
+        #shrink the displayedContent for a page change effect    
         #get the default size of the displayedContent
         defaultSize = self.__displayedText.GetSize()
-        #shrink the displayedContent for a page change effect  
         self.__displayedText.SetSize(300, 220)
         #reset it to its default size
         self.__displayedText.SetSize(defaultSize)
-
         #switch to the current page and set focus to the displayedContent
         self.__displayedText.SetValue(page)
+        self.__displayedText.SetInsertionPoint(pos)
         self.__displayedText.SetFocus()
         self.updateStatusBar()    #update the statusbar.
 
-
-    #events associated with this class
+    #method that updates the thread operation in regards to the on_play event handler
+    def __updateThread(self):
+        #resume the thread operation if the readAloud and noSwitchedPage flags are set to true
+        if(self.__readAloud and self.__noSwitchedPage):
+            self.__thread.resume()
+        else:    #otherwise, 
+            #set the readAloud and noSwitchedPage flags to true
+            self.__readAloud= self.__noSwitchedPage = True
+            textLines = self.__displayedText.GetValue().split('.')    #break the text into sentences
+            #get the voiceKey and its associated values from the windows registry (voice name)
+            voiceKey = createTopBookReaderKeys(winreg, path='voices')
+            name = winreg.QueryValueEx(voiceKey, 'name')[0]
+            #invoke the tts function
+            speech = tts()
+            speechOutput = speech[name]
+        #start the thread operation
+            self.__thread = SpeechThreadControls(target=speechOutput[0], args=(textLines,), btn=self.__readAloudBtn, winReg=winreg)
+            self.__thread.start()
 
     #event that handles the previous page navigation.
-    def on_prvPage(self, event):
+    def on_prvPage(self, event, pos=0):
         #just return if either no book is opened; or it's on the first page
         if(self.isBookOpened() or self.__bookFile.getPageNumber() == 0):
             return
-
-        #otherwise, play the sound and switch to the previous page
-        self.pageNavigator(self.__bookFile.previousPage())
-
-    #method that updates the thread operation in regards to the on_play event handler
-    def __updateThread(self):
-        #resume the thread operation if readAloud and noSwitchedPage flags are set to true
-        if(self.__readAloud and self.__noSwitchedPage):
-            self.__thread.resume()
-        else:    #otherwise, start the thread operation
-            #set the readAloud and noSwitchedPage flags to true
-            self.__readAloud= self.__noSwitchedPage = True
-            textLines = self.__displayedText.GetValue().split('.')
-            self.__thread = ThreadControls(target=tts, args=(textLines,), btn=self.__readAloudBtn)
-            self.__thread.start()
+        #play the sound and switch to the previous page
+        self.pageNavigator(self.__bookFile.previousPage(), pos)
 
     #event that is responsible for both the play and pause of the read aloud feature.
     def on_playAloud(self, event):
@@ -302,13 +315,12 @@ class TopBookReaderPanel(wx.Panel):
             self.__thread.pause()
         
             #event that handles the next page navigation.
-    def on_nxtPage(self, event):
+    def on_nxtPage(self, event, pos=0):
         #just return if either no book is opened; or it's on the last page
         if(self.isBookOpened() or  self.__bookFile.getPageNumber() == self.__bookFile.getTotalPages() -1):
             return
-
-        #otherwise, play the sound and switch to the next page
-        self.pageNavigator(self.__bookFile.nextPage())
+        #play the sound and switch to the next page
+        self.pageNavigator(self.__bookFile.nextPage(), pos)
 
     #event that pops up with the recently opened book list dialog box.
     def on_recentBooks(self, event):
@@ -318,6 +330,23 @@ class TopBookReaderPanel(wx.Panel):
 
     #event that pops up with the dialog box to make some setting adjustment to the current voice reader.
     def on_voiceAdjustment(self, event):
-        dlg = TopBookReaderVoiceAdjustmentDialog(self)
+        dlg = TopBookReaderVoiceAdjustmentDialog(self, winreg)
         dlg.ShowModal()
         dlg.Destroy()
+
+    #event that acts on the navigation keys
+    def on_keyNavigation(self, event):
+        charPoint = self.__displayedText.GetInsertionPoint()
+        firstLineLength = self.__displayedText.GetLineLength(0)
+        secondToLastLineLength = sum([self.__displayedText.GetLineLength(lineNumber) for lineNumber in range(self.__displayedText.GetNumberOfLines() -1)])
+        lastPosition = self.__displayedText.GetLastPosition()
+        if (charPoint <= firstLineLength) and (event.GetKeyCode() == WXK_UP):    #navigate to the previous page if up arrow is validated
+            self.on_prvPage(event, -1)
+        elif(charPoint > secondToLastLineLength  ) and (event.GetKeyCode() == WXK_DOWN):#navigate to the next  page if down arrow is validated
+            self.on_nxtPage(event)
+            return
+        elif (charPoint == 0) and (event.GetKeyCode() == WXK_LEFT):#navigate to the previous page if left arrow is validated
+            self.on_prvPage(event, lastPosition)
+        elif (charPoint == lastPosition) and (event.GetKeyCode() == WXK_RIGHT):#navigate to the next page if right arrow is validated
+            self.on_nxtPage(event)
+        event.Skip()

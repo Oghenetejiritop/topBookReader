@@ -13,10 +13,8 @@
 from json import load as jsonLoad
 from os import  makedirs, path
 from pickle import dump, load
-
 from pyttsx3 import init as tts
-
-from topBookReaderGui.topBookReaderExtras.topBookReaderSupport import SerializedFontData
+from wx import Font, FONTFAMILY_DEFAULT, FONTSTYLE_SLANT, FONTWEIGHT_NORMAL
 
 emptyString = ''
 
@@ -35,12 +33,12 @@ def topBookReaderPath(dir=emptyString, file=emptyString, content=None):
 
 #create the topBookReader paths
 def createTopBookReaderPaths(topBookReaderDirectory):
-    fontObject = SerializedFontData()
+    fontObject =     Font(12, FONTFAMILY_DEFAULT, FONTSTYLE_SLANT, FONTWEIGHT_NORMAL)
     #variable to the serialised paths
     filesAndContents = (('topBookReaderRecentBookInfo.pkl', {}),
         ('topBookReaderRecentList.pkl', []),
         ('topBookReaderBookmarksHistory.pkl', {}),
-        ('topBookReaderFont.pkl', fontObject),)
+        ('topBookReaderFont.pkl', [fontObject.GetPointSize(), fontObject  .GetFamily(), fontObject  .GetStyle(), fontObject  .GetWeight(), 'Blue']),)
 
     #create the .topBookReader directory and its serialized files if doesn't exist
     if not path.exists(topBookReaderDirectory):
@@ -49,6 +47,22 @@ def createTopBookReaderPaths(topBookReaderDirectory):
     for file, content in filesAndContents:
         if not path.exists(f'{topBookReaderDirectory}/{file}'):
             topBookReaderPath(topBookReaderDirectory, file, content)
+
+#function that handles the topBookReader windows registry keys
+def createTopBookReaderKeys(winReg, keyAccess='r', path=''):
+    accesses = {'r': winReg.KEY_READ, 'w': winReg.KEY_WRITE} 
+    try:
+        key = winReg.OpenKey(winReg.HKEY_CURRENT_USER, f'Software\\TOPBookReader\\{path}', access=accesses[keyAccess])
+    except:
+        key = winReg.CreateKey(winReg.HKEY_CURRENT_USER, f'Software\\TOPBookReader\\{path}')
+        if path.endswith('voices'):
+            keyNameValue = (('name', 'Microsoft Zira Desktop - English (United States)'),
+            ('rate', '25'),
+            ('volume', '40'),
+            ('voice selection index','2'),)
+            for name, value in keyNameValue:
+                winReg.SetValueEx(key, name, 0,winReg.REG_SZ, value)
+    return key
 
 #for the topBookReader dictionary feature
 def topBookReaderWordMeaning(word):
@@ -69,9 +83,3 @@ def unwantedCharRemover(value, unwanted):
     for char in unwanted:
         value = value.replace(char, ' ')
     return value
-
-#function that converts text to speech
-def textToSpeech(text):
-    engine = tts()
-    engine.say(text)
-    engine.runAndWait()

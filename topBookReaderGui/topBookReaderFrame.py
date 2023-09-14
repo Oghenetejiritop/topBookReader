@@ -9,24 +9,27 @@
 '''
 
 
-import wx
+from wx import (BoxSizer, VERTICAL, ALL, EXPAND,
+    Frame,)
 
-from topBookReaderGui.topBookReaderPanel import TopBookReaderPanel
 from topBookReaderGui.topBookReaderMenubar import TopBookReaderMenuBar
-from topBookReaderGui.topBookReaderExitDialog import TopBookReaderExitDialog
+from topBookReaderGui.topBookReaderPanel import TopBookReaderPanel
 
 #the main frame/window of the app
-class TopBookReaderFrame(wx.Frame):
+class TopBookReaderFrame(Frame):
     '''  this class serves as the main window of the app.  '''
 
     def __init__(self):
-        super().__init__(None, wx.ID_ANY, 'TOP Book Reader', )
+        super().__init__(None, -1, 'TOP Book Reader', )
 
-        self.toolBar = self.CreateToolBar()    #instantiates the toolbar object
-
+        #self.__vSizer = BoxSizer(VERTICAL)
+        #instantiate the toolbar object
+        self.toolBar = self.CreateToolBar()
         self.pnl = TopBookReaderPanel(self)    #instantiates the TopBookReaderPanel object
-
         self.__menuBar = TopBookReaderMenuBar(self)    #instantiate the EbarMenuBar object
         self.SetMenuBar(self.__menuBar)    #add it to the main window
+        #self.__vSizer.Add(self.pnl, 0, ALL | EXPAND, 5)
+        #self.__vSizer.SetSizeHints(self)
+        #self.SetSizer(self.__vSizer)
 
         self.Show()
