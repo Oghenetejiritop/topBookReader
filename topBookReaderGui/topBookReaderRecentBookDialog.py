@@ -11,19 +11,23 @@
 
 from os import path
 
-import wx
+from  wx import (Bitmap, BITMAP_TYPE_PNG,
+    BoxSizer, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON, EVT_LIST_ITEM_ACTIVATED, Font, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD, ID_CANCEL,
+    Dialog, ICON_EXCLAMATION, MessageDialog,
+    StaticText,)
 
 from topBookReaderGui.topBookReaderListDisplay import TopBookReaderListDisplay as ListDisplay
 
 isExistingPath = path.exists    #alias this function
 
 def showMessage(msg):
-    dlg = wx.MessageDialog(None, msg, 'Missing File Error!', style=wx.ICON_EXCLAMATION)
+    dlg = MessageDialog(None, msg, 'Missing File Error!', style=ICON_EXCLAMATION)
     dlg.ShowModal()
     dlg.Destroy()
 
 #dialog for the recent documents opened
-class TopBookReaderRecentBooksDialog(wx.Dialog):
+class TopBookReaderRecentBooksDialog(Dialog):
     '''
     this class presents the app with recently opened documents
     Accepts three parameters;
@@ -33,10 +37,7 @@ class TopBookReaderRecentBooksDialog(wx.Dialog):
     '''
 
     def __init__(self, parent, bookFile, list):
-        super().__init__(None, wx.ID_ANY, title='Recent Books')
-
-        #instantiate the vertical box sizer for the components
-        self.__vSizer = wx.BoxSizer(wx.VERTICAL)
+        super().__init__(None, -1, title='Recently Opened Books', size=(500, 400))
 
         self.__parent = parent
         self.__bookFile = bookFile
@@ -44,11 +45,15 @@ class TopBookReaderRecentBooksDialog(wx.Dialog):
         self.__dictPaths = self.__parent.getRecentBookInfo()
         self.__dictBookmarks = self.__parent.getBookmarks()    #stores the bookmark history
 
-        self.__label = wx.StaticText(self, -1, 'Select an item')
+        #instantiate the box sizers for the components 
+        self.__vSizer = BoxSizer(VERTICAL)
+        hSizer1 = BoxSizer(HORIZONTAL)
+        self.__hSizer2 = BoxSizer(HORIZONTAL)
+        hSizer1.Add(StaticText(self, -1, 'Select an item'), 0,  ALL, 5)
         self.__listDisplay = ListDisplay(self, 'S/N', 'File Name', 'File Path')    #instantiate the ListDisplay object to show recently opened books.
-        self.__vSizer.Add(self.__listDisplay, 1, wx.EXPAND)
-
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_open, self.__listDisplay)
+        hSizer1.Add(self.__listDisplay, 1, EXPAND | ALL, 10)
+        self.__vSizer.Add(hSizer1, 0, ALL)
+        self.Bind(EVT_LIST_ITEM_ACTIVATED, self.on_open, self.__listDisplay)
         #insert the default items to the list display
         self.__insertDefaultItem()
 
@@ -82,21 +87,22 @@ class TopBookReaderRecentBooksDialog(wx.Dialog):
     #method that implements the button component; 
     #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
     def __implementBtn(self, id, label, evtHandler):
-        btn = wx.Button(self, id, label, pos=(100, 50), size=(200, 500))
-        self.Bind(wx.EVT_BUTTON, evtHandler, btn)
+        btn = Button(self, id, label, style=BU_EXACTFIT)
+        self.Bind(EVT_BUTTON, evtHandler, btn)
         return btn
 
     #the method that displays the button to the screen
     def __showBtn(self):
         #determine the state of the buttons if the list is empty or not
-        emptyDecider = False if self.__list.isEmpty() else True
+        isEmpty = False if self.__list.isEmpty() else True
         #unpack the __buttonInfo
         for label, evtHandler in self.__buttonInfo():
-            btn = self.__implementBtn(wx.ID_ANY, label, evtHandler).Enable(emptyDecider)
-            #add each button to the vSizer
-            self.__vSizer.Add(btn, 0, wx.ALL | wx.CENTER, 5)
-        self.__vSizer.Add(wx.Button(self, wx.ID_CANCEL, 'Cancel'), 0, wx.ALL | wx.CENTER, 5)
-
+            #add each button to the hSizer
+            btn = self.__implementBtn(-1, label, evtHandler)
+            btn.Enable(isEmpty)
+            self.__hSizer2.Add(btn, 0, ALL | CENTER, 5)
+        self.__hSizer2.Add(Button(self, ID_CANCEL, 'Cancel', style=BU_EXACTFIT), 0, ALL | CENTER, 5)
+        self.__vSizer.Add(self.__hSizer2, 0, EXPAND)
         self.__vSizer.SetSizeHints(self)
         self.SetSizer(self.__vSizer)
 

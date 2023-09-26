@@ -68,50 +68,58 @@ class SpeechThreadControls(Thread):
     Accepts four parameters;
     target: requires a function.
     args: requires list of function arguments.
-    btn: requires the wx.Button object
+    panel: requires the wx.Panel object
     winReg: requires the windows registry object
     '''
 
-    def __init__(self, target=None, args=(), btn=None, winReg=None):
+    def __init__(self, target=None, args=(), panel=None, winReg=None):
         super().__init__(group=None, target=None, name=None, args=(), kwargs=None,daemon=True)
 
         self.__target = target    #holds the targeted function
-        self.__targ1 = args[0]    #stores the first argument
+        self.__text = args[0]    #stores the first argument
         self.__winReg = winReg
-        self.__btn = btn
+        self.__panel = panel
         self.__event = Event()    #instantiates the Event object
 
     #overwrite the run method of the Thread class
     def run(self):
-        self.__btn.SetLabel('&Pause')    #changes the btn label to pause
-        i = 0
+        self.__panel.btnList[1].SetLabel('&Pause')    #changes the btn label to pause
+        lineNumber = 0
         while True:
-            #pause the thread operation and resets i to 0 when i is equivalent to the length of targ1
-            if i == len(self.__targ1):
-                i = 0
-                self.pause()
+            try:
+                currentPage, totalPages = self.__panel.getPageInfo()
+            except:
+                currentPage = totalPages = 1
+
+            #reset lineNumber to zero when on the last line
+            if(lineNumber > self.__text.GetNumberOfLines()):
+                lineNumber = 0
+                if(currentPage == totalPages):    #pauses the tts when on the last line and page
+                    self.pause()
+                #otherwise, move to the next page
+                self.__panel.on_nxtPage()
 
             #sleep for a second if the event is set
             if self.__event.is_set():
                 sleep(1)
             else:    #otherwise, invoke the targeted function
-                self.__functionNotifier()
-                self.__target(self.__targ1[i], self.__targ2, self.__targ3, self.__targ4)
-                i+=1
+                self.__functionNotifier()    #update the speech properties (voice, rate and volume) when invoked
+                self.__target(self.__text.GetLineText(lineNumber), self.__speech, self.__rate, self.__volume)
+                lineNumber +=1
 
     #method that resumes the operation when the event is cleared
     def resume(self):
         self.__event.clear()
         icon = Bitmap('resources/icons/pause.png', BITMAP_TYPE_PNG)
-        self.__btn.SetBitmap(icon)
-        self.__btn.SetLabel('&Pause')    #changes the btn label to pause
+        self.__panel.btnList[1].SetBitmap(icon)
+        self.__panel.btnList[1].SetLabel('&Pause')    #changes the btn label to pause
 
     #the method that pauses the operation when the event is set
     def pause(self):
         self.__event.set()
         icon = Bitmap('resources/icons/play.png', BITMAP_TYPE_PNG)
-        self.__btn.SetBitmap(icon)
-        self.__btn.SetLabel('&Play Aloud')    #changes the btn label to play
+        self.__panel.btnList[1].SetBitmap(icon)
+        self.__panel.btnList[1].SetLabel('&Play Aloud')    #changes the btn label to play
 
     #method that notifies for a function update
     def __functionNotifier(self):
@@ -123,6 +131,6 @@ class SpeechThreadControls(Thread):
         #invoke the tts function
         speech = tts()
         speechOutput = speech[name]
-        self.__targ2 = speechOutput[1]
-        self.__targ3 = rate
-        self.__targ4 = volume
+        self.__speech= speechOutput[1]
+        self.__rate = rate
+        self.__volume = volume

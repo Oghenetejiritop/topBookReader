@@ -13,23 +13,30 @@ from time import sleep
 import ctypes
 from gtts import gTTS
 from pyttsx3 import init as msTts
-from wx import MessageDialog, ICON_EXCLAMATION
+#from wx import MessageDialog, ICON_EXCLAMATION
 
+#gets if the platform is 32 bits or 64 bits
 try:
     clientLib = ctypes.windll.LoadLibrary('accessibility_service/nvdaControllerClient/nvdaControllerClient32.dll')
 except:
-    clientLib = ctypes.windll.LoadLibrary('accessibility_service/nvdaControllerClient/nvdaControllerClient64.dll')
+    clientLib = ctypes.windll.LoadLibrary('accessibilityService/nvdaControllerClient/nvdaControllerClient64.dll')
 
+#this function handles the announcement of pages using the ncdaControllerClient.dll file
 def nvdaSpeak(text):
+    #gets if the platform is 32 bits or 64 bits
+    try:
+        clientLib = ctypes.windll.LoadLibrary('accessibilityService/nvdaControllerClient/nvdaControllerClient32.dll')
+    except:
+        clientLib = ctypes.windll.LoadLibrary('accessibilityService/nvdaControllerClient/nvdaControllerClient64.dll')
     clientLib.nvdaController_speakText(text)
 
+#function that convert text to speech with the highlighted engine
 def textToSpeech():
-    return {'Google Text To Speech (GTTS)': (googleTts, 0),
-    'Microsoft Hazel Desktop - English (Great Britain)': (microsoftTts, 0),
+    return {'Microsoft Hazel Desktop - English (Great Britain)': (microsoftTts, 0),
     'Microsoft Zira Desktop - English (United States)': (microsoftTts, 1),}
 
-#the google text to speech function
-def googleTts(text, voice, rate, volume):
+#the google text to speech function is for future release 
+'''def googleTts(text, voice, rate, volume):
     try:
         tts = gTTS(text)
         tts.save('talk.mp3')
@@ -37,9 +44,9 @@ def googleTts(text, voice, rate, volume):
         msg = 'The google TTS requires the internet to function.'
         dlg = MessageDialog(None, msg, 'Connection Error!', style=ICON_EXCLAMATION)
         dlg.ShowModal()
-        dlg.Destroy()
+        dlg.Destroy()'''
 
-#the microsoft text to speech function
+#the microsoft text to speech function; set its properties (voice, rate and volume)
 def microsoftTts(text, voice, rate, volume):
     tts = msTts()
     voices = tts.getProperty('voices')

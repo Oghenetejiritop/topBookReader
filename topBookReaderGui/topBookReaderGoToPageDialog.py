@@ -8,43 +8,45 @@
 * Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
 '''
 
-
-import wx
+from  wx import (BoxSizer, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON, Font, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD,
+    Dialog, Panel, StaticText, ID_CANCEL,
+    TextCtrl, EVT_TEXT_ENTER, TE_PROCESS_ENTER,)
 
 #dialog for navigating to a specific page
-class TopBookReaderGoToPageDialog(wx.Dialog):
+class TopBookReaderGoToPageDialog(Dialog):
     '''
     this class presents the go to page feature
     Has  a parameter (parent)  that requires the topBookReaderPanel object.
     '''
 
     def __init__(self, parent):
-        super().__init__(None, title='Select A Page')
+        super().__init__(None, title='Select A Page', size=(260, 240))
 
         self.__parent = parent
         self.__displayedContent = self.__parent.pnl.cloneDisplayedText()    #gets the reference to the displayedContent component of the app
         self.__bookPageInfo = self.__parent.pnl.getPageInfo()    #store both the current page number and the total pages.
 
         #instantiate the vertical box sizer
-        vSizer = wx.BoxSizer(wx.VERTICAL)
+        vSizer = BoxSizer(VERTICAL)
 
-        pnl = wx.Panel(self)
+        pnl = Panel(self)
 
-        label = wx.StaticText(pnl, -1, f'Enter the page from 1-{self.__bookPageInfo[1]} pages:')
-        vSizer.Add(label, 0, wx.ALL | wx.LEFT, 10)
+        label = StaticText(pnl, -1, f'Enter the page from 1-{self.__bookPageInfo[1]} pages:')
+        vSizer.Add(label, 0, ALL | LEFT, 10)
 
-        self.__pageNumberEntry = wx.TextCtrl(pnl, wx.ID_ANY, size=(100, 25), style=wx.TE_PROCESS_ENTER)
+        self.__pageNumberEntry = TextCtrl(pnl, -1, size=(100, 25), style=TE_PROCESS_ENTER)
         #set the current page number as the default value
         self.__pageNumberEntry.SetValue(f'{self.__bookPageInfo[0]}')
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_goToPageNumber, self.__pageNumberEntry)
-        vSizer.Add(self.__pageNumberEntry, 0, wx.ALL | wx.LEFT, 5)
+        self.Bind(EVT_TEXT_ENTER, self.on_goToPageNumber, self.__pageNumberEntry)
+        vSizer.Add(self.__pageNumberEntry, 0, ALL | LEFT, 5)
 
-        goToPageBtn = wx.Button(pnl, wx.ID_ANY, '&Navigate to page ')
-        goToPageBtn.Bind(wx.EVT_BUTTON, self.on_goToPageNumber)
-        vSizer.Add(goToPageBtn, 0, wx.ALL | wx.LEFT, 5)
+        goToPageBtn = Button(pnl, -1, '&Navigate to page ')
+        goToPageBtn.Bind(EVT_BUTTON, self.on_goToPageNumber)
+        vSizer.Add(goToPageBtn, 0, ALL | LEFT, 5)
   
-        cancelBtn = wx.Button(pnl, wx.ID_CANCEL, 'Cancel')
-        vSizer.Add(cancelBtn, 0, wx.ALL | wx.LEFT, 10)
+        cancelBtn = Button(pnl, ID_CANCEL, 'Cancel')
+        vSizer.Add(cancelBtn, 0, ALL | LEFT, 10)
 
         vSizer.SetSizeHints(pnl)
         pnl.SetSizer(vSizer)

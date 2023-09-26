@@ -6,23 +6,18 @@
 * A part of TOP BOOK Reader.
 * Licensed under the Massachusetts Institute of Technology (MIT);
 * Copyright (C) 2023 Oghenetejiri Peace Onosajerhe.
-
-e:
-ebarVenv\Scripts\activate.bat
-cd topBookReader
-py topBookReader.py
 '''
 
 
 from os import path
 import winreg
 
-from  wx import (AcceleratorTable, AcceleratorEntry, ACCEL_NORMAL,
+from  wx import (AcceleratorTable, AcceleratorEntry, ACCEL_NORMAL, Accessible,
     Bitmap, BITMAP_TYPE_PNG,
-    BoxSizer, ALL, CENTER,  VERTICAL, 
-    Button, BU_EXACTFIT, EVT_BUTTON,
+    BoxSizer, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON, Font, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD,
     Panel, StaticText,
-    WXK_DOWN, WXK_LEFT, WXK_RIGHT, WXK_UP, EVT_KEY_DOWN,)
+    WXK_INSERT, WXK_DOWN, WXK_LEFT, WXK_RIGHT, WXK_UP, EVT_KEY_DOWN, EVT_KEY_UP,)
 from  wx.adv import Sound
 
 from topBookReaderGui.topBookReaderContentDisplay  import TopBookReaderContentDisplay
@@ -72,19 +67,24 @@ class TopBookReaderPanel( Panel):
 
         self.__sound = Sound('resources/sounds/pageFlipper.wav')    #inserts the sound file for page navigation.
 
-        self.__label =  StaticText(self,  -1, 'Display Content')
+        #instantiate the vertical box sizers for the displayed content and buttons
+        self.__vSizer1,  self.__vSizer2 = BoxSizer(VERTICAL), BoxSizer( VERTICAL)
+        self.__hSizer =   BoxSizer(HORIZONTAL)
+        #set the label
+        self.__vSizer1.Add(StaticText(self,  -1, 'Display Content'), 0, ALL, 5)
         self.__displayedText = TopBookReaderContentDisplay(self, topBookReaderDirectory)    #instantiates the TopBookReaderContentDisplay object
+        self.__vSizer1.Add(self.__displayedText, 0, EXPAND | ALL, 10)
         #show the default content
         self.displayDefaultValue()
         #bind the key navigation event handler
-        self.__displayedText.Bind(EVT_KEY_DOWN, self.on_keyNavigation, )
+        self.__displayedText.Bind(EVT_KEY_DOWN, self.on_keyNavigation)
+        #bind the event that gets the caret for the screen reader say all feature here
+        self.__displayedText.Bind(EVT_KEY_DOWN, self.on_sayAll)
 
-        #instantiate the vertical box sizer for the buttons
-        self.__vSizer =  BoxSizer( VERTICAL)
+        self.__hSizer.Add(self.__vSizer1, 1, EXPAND)
 
         #make the buttons visible
         self.__showBtn()
-        self.__readAloudBtn = self.__btnList[1]    #stores the play/pause button object
 
         #set keyboard shortcuts
         btnShortcuts =  AcceleratorTable(self.__btnEntries)
@@ -105,15 +105,18 @@ class TopBookReaderPanel( Panel):
         ('Previous Page (P)', 'previous', self.on_prvPage),
         ('&Play Aloud', 'play', self.on_playAloud),
         ('Next Page (N)', 'next', self.on_nxtPage),
-        ('&Recently Opened Books...', 'recent', self.on_recentBooks),
-        ('&Voice Adjustment Setting...', 'textToSpeech', self.on_voiceAdjustment)
+        ('&Recently Opened...', 'recent', self.on_recentBooks),
+        ('&Voice Settings...', 'textToSpeech', self.on_voiceAdjustment)
         )
 
     #method that implements the button component; 
     #accepts four parameters: id ( -1), label (str), icon (bitmap icon)  and evtHandler (event handler)
     def __implementBtn(self, id, label, icon, evtHandler):
         btn =  Button(self, id, label, style= BU_EXACTFIT)
-        bmp =  Bitmap(f'resources/icons/{icon}.png',  BITMAP_TYPE_PNG)
+        bmp =  Bitmap(f'resources/icons/{icon}.png',  BITMAP_TYPE_PNG)    #includes an icon
+        fontProperties =     Font(10, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD)    #sets the fonts
+        btn.SetFont(fontProperties)
+        btn.SetForegroundColour('Gold')
         btn.SetBitmap(bmp)
         self.Bind( EVT_BUTTON, evtHandler, btn)
         return btn
@@ -121,24 +124,25 @@ class TopBookReaderPanel( Panel):
     #the method that displays the button to the screen
     def __showBtn(self):
         i = 0    #serves as a counter
-        self.__btnList = []    #a list that will hold each button object
+        self.btnList = []    #a list that will hold each button object
         #set the entries for the page navigation shortcuts
         self.__btnEntries = [ AcceleratorEntry(),  AcceleratorEntry()]
 
         #unpack the __buttonInfo
         for label, icon, evtHandler in self.__buttonInfo():
             btn = self.__implementBtn( -1, label, icon, evtHandler)
-            self.__btnList.append(btn)    #appends the current btn object
+            self.btnList.append(btn)    #appends the current btn object
 
             #set the shortcut keys (n and p) for both the previous and next buttons
             if(label.endswith(')')):
                 self.__btnEntries[i].Set( ACCEL_NORMAL, ord(label[0]), btn.GetId())
                 i += 1    #increments i by 1
 
-            #add each button to the vSizer
-            self.__vSizer.Add(btn, 0,  ALL |  CENTER, 5)
-        self.__vSizer.SetSizeHints(self)
-        self.SetSizer(self.__vSizer)
+            #add each button to the vSizer2
+            self.__vSizer2.Add(btn, 0,  ALL |  CENTER, 5)
+        self.__hSizer.Add(self.__vSizer2, 0, LEFT)
+        self.SetSizerAndFit(self.__hSizer)
+        self.SetSizer(self.__hSizer)
 
     #method that updates the recent list of opened books (as a serialized file)
     #accepts one parameter: content (list)
@@ -288,7 +292,7 @@ class TopBookReaderPanel( Panel):
         else:    #otherwise, 
             #set the readAloud and noSwitchedPage flags to true
             self.__readAloud= self.__noSwitchedPage = True
-            textLines = self.__displayedText.GetValue().split('.')    #break the text into sentences
+            textLines = self.__displayedText    #stores the current content
             #get the voiceKey and its associated values from the windows registry (voice name)
             voiceKey = createTopBookReaderKeys(winreg, path='voices')
             name = winreg.QueryValueEx(voiceKey, 'name')[0]
@@ -296,11 +300,11 @@ class TopBookReaderPanel( Panel):
             speech = tts()
             speechOutput = speech[name]
         #start the thread operation
-            self.__thread = SpeechThreadControls(target=speechOutput[0], args=(textLines,), btn=self.__readAloudBtn, winReg=winreg)
+            self.__thread = SpeechThreadControls(target=speechOutput[0], args=(textLines,), panel=self, winReg=winreg)
             self.__thread.start()
 
     #event that handles the previous page navigation.
-    def on_prvPage(self, event, pos=0):
+    def on_prvPage(self, event=None, pos=0):
         #just return if either no book is opened; or it's on the first page
         if(self.isBookOpened() or self.__bookFile.getPageNumber() == 0):
             return
@@ -309,13 +313,13 @@ class TopBookReaderPanel( Panel):
 
     #event that is responsible for both the play and pause of the read aloud feature.
     def on_playAloud(self, event):
-        if self.__readAloudBtn.GetLabel().endswith('d'):
+        if self.btnList[1].GetLabel().endswith('d'):
             self.__updateThread()
         else:
             self.__thread.pause()
         
             #event that handles the next page navigation.
-    def on_nxtPage(self, event, pos=0):
+    def on_nxtPage(self, event=None, pos=0):
         #just return if either no book is opened; or it's on the last page
         if(self.isBookOpened() or  self.__bookFile.getPageNumber() == self.__bookFile.getTotalPages() -1):
             return
@@ -328,11 +332,15 @@ class TopBookReaderPanel( Panel):
         dlg.ShowModal()
         dlg.Destroy()
 
-    #event that pops up with the dialog box to make some setting adjustment to the current voice reader.
+    #event that pops up with the voice adjustment dialog box
     def on_voiceAdjustment(self, event):
         dlg = TopBookReaderVoiceAdjustmentDialog(self, winreg)
         dlg.ShowModal()
         dlg.Destroy()
+
+    #event that handles the nvda say all feature
+    def on_sayAll(self, event):
+        event.Skip()
 
     #event that acts on the navigation keys
     def on_keyNavigation(self, event):
@@ -341,12 +349,12 @@ class TopBookReaderPanel( Panel):
         secondToLastLineLength = sum([self.__displayedText.GetLineLength(lineNumber) for lineNumber in range(self.__displayedText.GetNumberOfLines() -1)])
         lastPosition = self.__displayedText.GetLastPosition()
         if (charPoint <= firstLineLength) and (event.GetKeyCode() == WXK_UP):    #navigate to the previous page if up arrow is validated
-            self.on_prvPage(event, -1)
+            self.on_prvPage(pos=-1)
         elif(charPoint > secondToLastLineLength  ) and (event.GetKeyCode() == WXK_DOWN):#navigate to the next  page if down arrow is validated
-            self.on_nxtPage(event)
+            self.on_nxtPage()
             return
         elif (charPoint == 0) and (event.GetKeyCode() == WXK_LEFT):#navigate to the previous page if left arrow is validated
-            self.on_prvPage(event, lastPosition)
+            self.on_prvPage(pos=lastPosition)
         elif (charPoint == lastPosition) and (event.GetKeyCode() == WXK_RIGHT):#navigate to the next page if right arrow is validated
-            self.on_nxtPage(event)
+            self.on_nxtPage()
         event.Skip()

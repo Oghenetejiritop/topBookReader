@@ -9,20 +9,20 @@
 '''
 
 
-import wx
+from wx import (ListView, LC_REPORT, LC_SINGLE_SEL, LC_HRULES, LC_VRULES,)
 import wx.lib.mixins.listctrl as listControl
 
 #display of the list control
-class TopBookReaderListDisplay(wx.ListView, listControl.ListCtrlAutoWidthMixin):
+class TopBookReaderListDisplay(ListView, listControl.ListCtrlAutoWidthMixin):
     '''
-    class that serves as a list control which displays report view of items.
+    class that serves as a list control which displays items as a report view.
     accepts two  parameters;
     parent: that requires the topBookReaderPanel object.
     *args: takes a list of strings to represent each column.
     '''
 
     def __init__(self, parent, *args):
-        wx.ListView.__init__(self, parent, wx.ID_ANY, style=(wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES | wx.LC_VRULES))
+        ListView.__init__(self, parent, -1, style=(LC_REPORT | LC_SINGLE_SEL | LC_HRULES | LC_VRULES))
         listControl.ListCtrlAutoWidthMixin.__init__(self)
 
         #insert the respective columns

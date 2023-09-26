@@ -9,19 +9,22 @@
 '''
 
 
-import wx
+from  wx import (BoxSizer, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON, Font, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD,
+    Dialog, Panel, StaticText, ID_CANCEL,
+    TextCtrl, EVT_TEXT_ENTER, TE_PROCESS_ENTER,)
 
 from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import unwantedCharRemover
 
 #the dialog for adding a bookmark  
-class TopBookReaderAddBookmarkDialog(wx.Dialog):
+class TopBookReaderAddBookmarkDialog(Dialog):
     '''
     this class is responsible for adding bookmarks to the bookmark history.
     Has  a parameter (parent)  that requires the topBookReaderFrame object.
     '''
 
     def __init__(self, parent):
-        super().__init__(None, title='Add a Bookmark')
+        super().__init__(None, title='Add a Bookmark', size=(260, 240))
 
         self.__parent = parent
 
@@ -32,23 +35,23 @@ class TopBookReaderAddBookmarkDialog(wx.Dialog):
         self.__callBookmarkInfo()
 
         #instantiate the vertical box sizer
-        vSizer = wx.BoxSizer(wx.VERTICAL)
+        vSizer = BoxSizer(VERTICAL)
 
-        pnl = wx.Panel(self)
+        pnl = Panel(self)
 
-        label = wx.StaticText(pnl, -1, 'Type a Bookmark Name for the Highlighted Text:')
-        vSizer.Add(label, 0, wx.ALL | wx.LEFT, 10)
+        label = StaticText(pnl, -1, 'Type a Bookmark Name for the Highlighted Text:')
+        vSizer.Add(label, 0, ALL | LEFT, 10)
 
-        self.__bookmarkText = wx.TextCtrl(pnl, wx.ID_ANY, size=(100, 25), style=wx.TE_PROCESS_ENTER)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_addToBookmark, self.__bookmarkText)
-        vSizer.Add(self.__bookmarkText, 0, wx.ALL | wx.LEFT, 5)
+        self.__bookmarkText = TextCtrl(pnl, -1, size=(75, 25), style=TE_PROCESS_ENTER)
+        self.Bind(EVT_TEXT_ENTER, self.on_addToBookmark, self.__bookmarkText)
+        vSizer.Add(self.__bookmarkText, 0, ALL | LEFT, 5)
 
-        addBtn = wx.Button(pnl, wx.ID_ANY, '&Add')
-        addBtn.Bind(wx.EVT_BUTTON, self.on_addToBookmark)
-        vSizer.Add(addBtn, 0, wx.ALL | wx.LEFT, 5)
+        addBtn = Button(pnl, -1, '&Add')
+        addBtn.Bind(EVT_BUTTON, self.on_addToBookmark)
+        vSizer.Add(addBtn, 0, ALL | LEFT, 5)
   
-        cancelBtn = wx.Button(pnl, wx.ID_CANCEL, 'Cancel')
-        vSizer.Add(cancelBtn, 0, wx.ALL | wx.LEFT, 10)
+        cancelBtn = Button(pnl, ID_CANCEL, 'Cancel')
+        vSizer.Add(cancelBtn, 0, ALL | LEFT, 10)
 
         vSizer.SetSizeHints(pnl)
         pnl.SetSizer(vSizer)

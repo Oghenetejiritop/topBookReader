@@ -1,20 +1,17 @@
 
+from sys import argv
+from wx import App
+
 #for the main application
-from wx import (App,
-    Bitmap, BITMAP_TYPE_PNG,
-    Yield,)
-from wx.adv import (Sound, SplashScreen,
-    SPLASH_CENTRE_ON_SCREEN, SPLASH_TIMEOUT,)
+
+#subclass the wx.App class
+class TopBookReaderApp(App):
+    pass
 
 if __name__ == '__main__':
-    app = App()
+    app = TopBookReaderApp()
     from topBookReaderGui.topBookReaderFrame import TopBookReaderFrame    #imports the topBookReaderFrame here
-    #play the startup sound file of the app
-    sound = Sound('resources/sounds/startup.wav')
-    sound.Play()
-    #display the app icon
-    appIcon = Bitmap('resources/icons/startSplash.png', BITMAP_TYPE_PNG)
-    splash = SplashScreen(appIcon, SPLASH_CENTRE_ON_SCREEN | SPLASH_TIMEOUT, 6000, None, -1)
-    Yield()
-    frame = TopBookReaderFrame()
+        #takes the 2nd commandline arg for the file path if does exist
+    file = argv[1] if len(argv) > 1 else ''
+    frame = TopBookReaderFrame(file)
     app.MainLoop()

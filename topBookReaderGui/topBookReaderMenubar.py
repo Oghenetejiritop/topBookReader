@@ -11,7 +11,10 @@
 
 from webbrowser import open as webOpener
 
-import wx
+from wx import (    Bitmap, BITMAP_TYPE_PNG,
+    FileDialog, FD_CHANGE_DIR, FD_FILE_MUST_EXIST, FD_SAVE, FD_OVERWRITE_PROMPT, ID_OK,
+    MenuBar, Menu, EVT_MENU, EVT_MENU_HIGHLIGHT,
+    PrintDialog,)
 from wx.adv import AboutDialogInfo, AboutBox
 
 from topBookReaderGui.topBookReaderAddBookmarkDialog import TopBookReaderAddBookmarkDialog
@@ -19,10 +22,12 @@ from topBookReaderGui.topBookReaderBookmarkListDialog import TopBookReaderBookma
 from topBookReaderGui.topBookReaderDictionaryDialog import TopBookReaderDictionaryDialog
 from topBookReaderGui.topBookReaderExitDialog import TopBookReaderExitDialog
 from topBookReaderGui.topBookReaderGoToPageDialog import TopBookReaderGoToPageDialog
+from topBookReaderGui.topBookReaderTableOfContentDialog import TopBookReaderTableOfContentDialog
+from topBookReaderGui.topBookReaderRecommendedDownloadSitesDialog import TopBookReaderRecommendedDownloadSitesDialog
 from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import openFileContent
 
 #menubar for the application
-class TopBookReaderMenuBar(wx.MenuBar):
+class TopBookReaderMenuBar(MenuBar):
     '''
     this class controls the menubar component that houses the (file, edit, pages/bookmark, menu items and so on).
     Has  a parameter (parent)  that requires the topBookReaderFrame object.
@@ -34,10 +39,10 @@ class TopBookReaderMenuBar(wx.MenuBar):
         self.__parent = parent
         #reference the toolbar object
         self.__toolBar = self.__parent.toolBar
-        self.__createToolBar(self.__toolBar)
+        self.__addTools(self.__toolBar)    #adds the tools to the toolBar
         self.__displayedContent = self.__parent.pnl.cloneDisplayedText()    #gets the reference to the displayedContent component of the app
 
-        self.__menuDict = {}    #a dictionary that holds each menu item and its children
+        self.__menuDict = {}    #a dictionary that will be holding each menu  and its menu items (children)
 
         #invoke the menu items to the screen
         self.__createMenuItem()    #invoke the menu items to the screen
@@ -57,24 +62,25 @@ class TopBookReaderMenuBar(wx.MenuBar):
         return (
         ('Open A Document', 'open', self.on_openDocument),
         ('Exit Program', 'exit', self.on_exit),
-        ('Bookmark Text...', 'bookmark', self.on_addToBookmarks),
-        ('Bookmarks...', 'bookmarkHistory', self.on_viewBookmarks),
-        ('Access Word In Dictionary...', 'dictionary', self.on_dictionary)
+        ('Add To Bookmark...', 'bookmark', self.on_addToBookmarks),
+        ('View Bookmark History...', 'bookmarkHistory', self.on_viewBookmarks),
+        ('Font Adjustments...', 'font', self.on_adjustFont),
+        ('Access Word In Dictionary...', 'dictionary', self.on_dictionary),
         )
 
     #method that implements the toolbar component; 
-    #accepts four parameters: toolBar (the wx.ToolBar object), id (wx.ID_ANY), label (str) and evtHandler (event handler)
+    #accepts four parameters: toolBar (the ToolBar object), id (-1), label (str) and evtHandler (event handler)
     def __implementTool(self, toolBar, id, label, icon,  evtHandler):
         tool = toolBar.AddTool( id, label, icon, label)
-        self.__parent.Bind(wx.EVT_MENU, evtHandler, tool)
+        self.__parent.Bind(EVT_MENU, evtHandler, tool)
         toolBar.AddSeparator()
 
     #create the toolbar on the screen
-    def __createToolBar(self, toolBar):
+    def __addTools(self, toolBar):
         #unpack the .__toolBarInfo()
         for label, icon, evtHandler in self.__toolBarInfo():
-            bmp = wx.Bitmap(f'resources/icons/{icon}.png', wx.BITMAP_TYPE_PNG)    #gets the bitmap icon
-            self.__implementTool(toolBar, wx.ID_ANY, label, bmp, evtHandler)    #implements the tool
+            bmp = Bitmap(f'resources/icons/{icon}.png', BITMAP_TYPE_PNG)    #gets the bitmap icon
+            self.__implementTool(toolBar, -1, label, bmp, evtHandler)    #implements the tool
         toolBar.Realize()
 
     #method that returns the menu item and its submenu components (label and event handler)
@@ -96,22 +102,23 @@ class TopBookReaderMenuBar(wx.MenuBar):
             (('&Add To Bookmarks...\tctrl+b', self.on_addToBookmarks),
             ('&View Bookmarks...\tctrl+shift+b', self.on_viewBookmarks),
             ('&Go To Page...\tctrl+g', self.on_goToPage),
-            ('Vie&w Table Of Content...\tctrl+shift+v', self.on_viewBookContent),)),
+            ('Vie&w Table Of Content...\tctrl+shift+t', self.on_viewBookContent),)),
 
         ('Vie&w',    #for the view menu item
             (('&Zoom In \talt+i', self.on_zoomIn),
             ('&Zoom Out\talt+o', self.on_zoomOut),
-            ('&Adjust Fonts...\talt+a', self.on_adjustFont),)),
+            ('&Adjust Fonts...\tctrl+f', self.on_adjustFont),)),
 
         ('&Advance',    #for the advance menu item
             (('&Access Dictionary Meaning...\tctrl+d', self.on_dictionary),
-            ('&Download More Books From Here\tctrl+d', self.on_downloadBook),)),
+            ('&Download More Books Through Here\tctrl+r', self.on_downloadBook),)),
 
         ('&Help',    #for the help menu item
             (('&About TOP Book Reader...\tctrl+shift+a', self.on_about),
             ('&User\'s Guide\tf1', self.on_userGuide),
             ('&View License...\tctrl+shift+l', self.on_license),
-            ('&Visit Website\tctrl+shift+w', self.on_website),)),
+            ('&Check For Update...\tf2', self.on_appUpdate),
+            ('&Visit Website\tctrl+w', self.on_website),)),
         )
 
     #method that creates each menu item and adds it to the menubar
@@ -120,22 +127,24 @@ class TopBookReaderMenuBar(wx.MenuBar):
 
         #unpack the __menuInfo
         for menuItemLabel,  menuItemInfo in self.__menuInfo():
-            menu= wx.Menu()    #creates a new menu
-            self.__menuDict[counter] = [menu]    #store each menu item and its children in a dictionary
+            menu= Menu()    #creates a new menu
+            self.__menuDict[counter] = [menu]    #store each menu and its menu items in a dictionary
 
             #unpack each menu's child item label and its event handler
             for item in menuItemInfo:
-                menuChildItem = menu.Append(wx.ID_ANY, item[0])
+                menuChildItem = menu.Append(-1, item[0])
                 self.__menuDict[counter].append(menuChildItem)    #appends each menuChildItem to its respective dictionary key address
 
                 #invoke each menu update event handler for their current state of operation
         #the state update for the edit menu items
-                self.__parent.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_updateEditMenuState, menuChildItem) if menuItemLabel.startswith('&E') else None
+                self.__parent.Bind(EVT_MENU_HIGHLIGHT, self.on_updateEditMenuState, menuChildItem) if menuItemLabel.startswith('&E') else None
         #the status update for the pages/bookmarks menu items
-                self.__parent.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_updatePagesBookmarksMenuState, menuChildItem) if menuItemLabel.startswith('P') else None
+                self.__parent.Bind(EVT_MENU_HIGHLIGHT, self.on_updatePagesBookmarksMenuState, menuChildItem) if menuItemLabel.startswith('P') else None
+        #the status update for the help menu items
+                self.__parent.Bind(EVT_MENU_HIGHLIGHT, self.on_updateHelpMenuState, menuChildItem) if menuItemLabel.startswith('&H') else None
 
                 #bind each menu item child's event to the frame
-                self.__parent.Bind(wx.EVT_MENU, item[1], menuChildItem)
+                self.__parent.Bind(EVT_MENU, item[1], menuChildItem)
             menu.AppendSeparator()    #create a demarcation from each menu item collection
             self.Append(menu, menuItemLabel)
             counter += 1    #increments counter by 1
@@ -148,23 +157,26 @@ class TopBookReaderMenuBar(wx.MenuBar):
     def on_openDocument(self, event):    #select a file using this dialog
         #set the wild card
         wildcard = 'Supported Files (*.docx;*.epub;*.pdf;*.rtf;*.txt)|*.docx;*.epub;*.pdf;*.rtf;*.txt|Word Document (*.docx)|*.docx|Electronic Publisher (*.epub)|*.epub|Portible Document Format (*.pdf)|*.pdf|Rich Text Format (*.rtf)|*.rtf|Text File (*.txt)|*.txt'
-
-        dlg = wx.FileDialog(None, 'Open A Book', wildcard=wildcard, style=wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST)
-        if dlg.ShowModal() == wx.ID_OK:
+        dlg = FileDialog(None, 'Open A Book', wildcard=wildcard, style=FD_CHANGE_DIR | FD_FILE_MUST_EXIST)
+        if dlg.ShowModal() == ID_OK:
             self.__parent.pnl.displayContent(dlg.GetPath())
             dlg.Destroy()
 
     #event that handles the saving of plain text file
     def on_saveFile(self, event):
-        wildcard = 'Text File (*.txt)|*.txt'
-
-        dlg = wx.FileDialog(None, 'Save File Content', wildcard=wildcard, style=(wx.FD_CHANGE_DIR | wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT))
-        dlg.ShowModal()
-        dlg.Destroy()
+        wildcard = 'Text File (*.txt)|*.txt'    #set the wild card to a text file
+        dlg = FileDialog(None, 'Save File Content', wildcard=wildcard, style=(FD_CHANGE_DIR | FD_SAVE|FD_OVERWRITE_PROMPT))
+        #save the text on the displayedContent into a text file
+        if dlg.ShowModal() == ID_OK:
+            path = dlg.GetPath()
+            savedFile = self.__displayedContent.SaveFile(path)
+            dlg.Destroy()
 
     #event that handles the printing out of documents
     def on_printFile(self, event):
-        pass
+        dlg = PrintDialog(None)
+        dlg.ShowModal()
+        dlg.Destroy()
 
     #event that handles the exitting action
     def on_exit(self, event):
@@ -228,7 +240,9 @@ class TopBookReaderMenuBar(wx.MenuBar):
 
     #event that handles the table of content of a document
     def on_viewBookContent(self, event):
-        pass
+        dlg = TopBookReaderTableOfContentDialog(self.__parent.pnl.getFileName())
+        dlg.ShowModal()
+        dlg.Destroy()
 
     #event that serve as status update to the pages/bookmarks menu state
     def on_updatePagesBookmarksMenuState(self, event):
@@ -264,7 +278,10 @@ class TopBookReaderMenuBar(wx.MenuBar):
 
     #event that handles the downloading of books feature
     def on_downloadBook(self, event):
-        pass
+        dlg = TopBookReaderRecommendedDownloadSitesDialog()
+        dlg.ShowModal()
+        dlg.Destroy()
+
 
     #for the help menu item
     #event that pops up with the about box dialog
@@ -290,6 +307,14 @@ class TopBookReaderMenuBar(wx.MenuBar):
         aboutAppLicense.SetDescription(content)
         AboutBox(aboutAppLicense)
 
+    #event that carries out the app update process
+    def on_appUpdate(self, event):
+        pass
+
     #event that accesses the website
     def on_website(self, event):
-        webOpener('https://www.slnconline.com.ng/ebar/')
+        webOpener('https://github.com/Oghenetejiritop/topBookReader/')
+    #event that serve as status update to the pages/bookmarks menu state
+    def on_updateHelpMenuState(self, event):
+        helpMenuItems = self.__menuDict[5]    #gets the menu references of the help menu item
+        helpMenuItems[0].Enable(helpMenuItems[4].GetId(), False)

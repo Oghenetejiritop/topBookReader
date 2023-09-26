@@ -9,12 +9,15 @@
 '''
 
 
-import wx
+from  wx import (Bitmap, BITMAP_TYPE_PNG,
+    BoxSizer, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON, Font, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD,
+    Dialog, StaticText, ID_CANCEL, EVT_LIST_ITEM_ACTIVATED,)
 
 from topBookReaderGui.topBookReaderListDisplay import TopBookReaderListDisplay as ListDisplay
 
 #dialog for the bookmark list of an opened document
-class TopBookReaderBookmarkListDialog(wx.Dialog):
+class TopBookReaderBookmarkListDialog(Dialog):
     '''
     this class retrieves and display the bookmark history of an opened document.
     Has  a parameter (parent)  that requires the topBookReaderFrame object.
@@ -25,10 +28,10 @@ class TopBookReaderBookmarkListDialog(wx.Dialog):
         #get the current title
         titleIndex = self.__parent.GetTitle().rfind('-')
         title = self.__parent.GetTitle()[:titleIndex]
-        super().__init__(None, wx.ID_ANY, title=f'Bookmark History for {title}')
+        super().__init__(None, -1, title=f'Bookmark History for {title}')
 
         #instantiate the horizontal box sizer
-        self.__hSizer = wx.BoxSizer(wx.HORIZONTAL)    
+        self.__hSizer = BoxSizer(HORIZONTAL)    
 
         #get the reference to the displayedContent component of the app
         self.__displayedContent = self.__parent.pnl.cloneDisplayedText()
@@ -38,10 +41,18 @@ class TopBookReaderBookmarkListDialog(wx.Dialog):
         self.__dictBookmarks = self.__parent.pnl.getBookmarks()
         self.__currentBookmarkList = self.__dictBookmarks.get(self.__path, [])
 
-        self.__label = wx.StaticText(self, -1, 'Select a Bookmark Item')
-        self.__listDisplay = ListDisplay(self, 'Bookmark Name', 'Page Number', 'Bookmarked Text')    #instantiate the ListDisplay object to show the bookmark list.
+        #instantiate the box sizers for the components (list display and the buttons)
+        self.__vSizer = BoxSizer(VERTICAL)
+        hSizer1 = BoxSizer(HORIZONTAL)
+        self.__hSizer2 = BoxSizer(HORIZONTAL)
+
+        label = StaticText(self, -1, 'Select a Bookmark Item')
+        hSizer1.Add(label, 0,  ALL, 5)
+        self.__listDisplay = ListDisplay(self, 'Name', 'Page No.', 'Text')    #instantiate the ListDisplay object to show the bookmark list.
+        hSizer1.Add(self.__listDisplay, 1, EXPAND | ALL, 10)
+        self.__vSizer.Add(hSizer1, 0, ALL)
         self.__insertDefaultItem()    #fill the list display with bookmarked info
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_open, self.__listDisplay)
+        self.Bind(EVT_LIST_ITEM_ACTIVATED, self.on_open, self.__listDisplay)
 
         #show the buttons
         self.__showBtn()
@@ -85,24 +96,26 @@ class TopBookReaderBookmarkListDialog(wx.Dialog):
         )
 
     #method that implements the button component; 
-    #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
+    #accepts three parameters: id (-1), label (str) and evtHandler (event handler)
     def __implementBtn(self, id, label, evtHandler):
-        btn = wx.Button(self, id, label, pos=(100, 50), size=(200, 500))
-        self.Bind(wx.EVT_BUTTON, evtHandler, btn)
+        btn = Button(self, id, label, style=BU_EXACTFIT)
+        self.Bind(EVT_BUTTON, evtHandler, btn)
         return btn
 
     #the method that displays the button to the screen
     def __showBtn(self):
         #determine the state of the buttons if the list is empty or not
-        decider = True if self.__currentBookmarkList else False
+        isEmpty =  True if self.__currentBookmarkList else False
         #unpack the __buttonInfo
         for label, evtHandler in self.__buttonInfo():
-            btn = self.__implementBtn(wx.ID_ANY, label, evtHandler).Enable(decider)
-            #add each button to the vSizer
-            self.__hSizer.Add(btn, 0, wx.ALL | wx.CENTER, 5)
-        self.__hSizer.Add(wx.Button(self, wx.ID_CANCEL, 'Cancel'), 0, wx.ALL | wx.CENTER, 5)
-        self.__hSizer.SetSizeHints(self)
-        self.SetSizer(self.__hSizer)
+            #add each button to the box Sizer
+            btn = self.__implementBtn(-1, label, evtHandler)
+            btn.Enable(isEmpty)
+            self.__hSizer2.Add(btn, 0, ALL | CENTER, 5)
+        self.__hSizer2.Add(Button(self, ID_CANCEL, 'Cancel', style=BU_EXACTFIT), 0, ALL | CENTER, 5)
+        self.__vSizer.Add(self.__hSizer2, 0, EXPAND)
+        self.__vSizer.SetSizeHints(self)
+        self.SetSizer(self.__vSizer)
 
     #method that handles update for the bookmark serialized file
     def __updateNotifier(self):

@@ -62,13 +62,3 @@ class FileValidator(AbstractBookFormat):
     def getTotalPages(self):
         return self.__currentFile.getTotalPages()
 
-'''test code
-a = FileValidator()
-a.insertFile("c:\\documents\\dreams.docx")
-print(a.getFileSource())
-print(a.getFileExtension())
-print(a.getFileName())
-a.nextPage()
-#a.nextPage()
-#a.previousPage()
-print('opened file', a.openFile())'''

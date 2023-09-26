@@ -9,23 +9,29 @@
 '''
 
 
-import wx
+from  wx import (BoxSizer, ALIGN_CENTER, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON, Font, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD,
+    Dialog, Panel, StaticText, ID_CANCEL,)
 
 #dialog for the exitting action
-class TopBookReaderExitDialog(wx.Dialog):
+class TopBookReaderExitDialog(Dialog):
     '''
     this class pops up with the confirming message; (Yes, No and Cancel buttons) in order to exit the app.
     Has  a parameter (parent)  that requires the topBookReaderFrame object.
     '''
 
     def __init__(self, parent):
-        super().__init__(None, title='Exitting...')
+        super().__init__(None, title='Exitting...', size=(500, 400))
 
         self.__parent = parent
-        wx.StaticText(self, wx.ID_ANY, "Want to leave and continue from where you left off later?")    #sets the label confirmation message
+        #instantiate the box sizers for the components (exit label and the buttons)
+        self.__vSizer = BoxSizer(VERTICAL)
+        hSizer1 = BoxSizer(HORIZONTAL)
+        self.__hSizer2 = BoxSizer(HORIZONTAL)
 
-        #instantiate the horizontal box sizer for the buttons
-        self.__hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        exitLabel = StaticText(self, -1, "Want to leave and continue from where you left off later?")    #sets the label confirmation message
+        hSizer1.Add(exitLabel, 1, EXPAND | ALL, 10)
+        self.__vSizer.Add(hSizer1, ALL | ALIGN_CENTER)
 
         self.__showBtn()
 
@@ -35,26 +41,27 @@ class TopBookReaderExitDialog(wx.Dialog):
     #method that returns the (id, label and event handler) of each button 
     def __buttonInfo(self):
         return (
-        (wx.ID_ANY, '&Yes', self.on_yes),
-        (wx.ID_ANY, '&No',  self.on_no),
+        (-1, '&Yes', self.on_yes),
+        (-1, '&No',  self.on_no),
         )
 
     #method that implements the button component; 
-    #accepts three parameters: id (wx.ID_ANY), label (str) and evtHandler (event handler)
+    #accepts three parameters: id (-1), label (str) and evtHandler (event handler)
     def __implementBtn(self, id, label, evtHandler):
-        btn = wx.Button(self, id, label)    #stores the button object
-        self.Bind(wx.EVT_BUTTON, evtHandler, btn)
+        btn = Button(self, id, label, style=BU_EXACTFIT)    #stores the button object
+        self.Bind(EVT_BUTTON, evtHandler, btn)
         return btn
 
     #the method that displays the button to the screen
     def __showBtn(self):
         #unpack the __buttonInfo
         for id, label, evtHandler in self.__buttonInfo():
-            #add each button to the vSizer
-            self.__hSizer.Add(self.__implementBtn( id, label, evtHandler), 0, wx.ALL | wx.CENTER, 5)
-        self.__hSizer.Add(wx.Button(self, wx.ID_CANCEL, 'Cancel',), 0, wx.ALL | wx.CENTER, 5)
-        self.__hSizer.SetSizeHints(self)
-        self.SetSizer(self.__hSizer)
+            #add each button to the box sizer
+            self.__hSizer2.Add(self.__implementBtn( id, label, evtHandler), 0, ALL, 5)
+        self.__hSizer2.Add(Button(self, ID_CANCEL, 'Cancel', style=BU_EXACTFIT), 0, ALL | CENTER, 5)
+        self.__vSizer.Add(self.__hSizer2, 0, EXPAND)
+        self.__vSizer.SetSizeHints(self)
+        self.SetSizer(self.__vSizer)
 
 
     #events associated with this class

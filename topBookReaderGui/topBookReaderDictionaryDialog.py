@@ -9,12 +9,15 @@
 '''
 
 
-import wx
+from  wx import (BoxSizer, ALL, CENTER,  EXPAND, HORIZONTAL, LEFT, VERTICAL,
+    Button, BU_EXACTFIT, EVT_BUTTON,
+    Dialog, Panel, StaticText, ID_CANCEL,
+    TextCtrl, EVT_TEXT_ENTER, TE_PROCESS_ENTER, TE_MULTILINE, TE_READONLY, TE_RICH2,)
 
 from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import topBookReaderWordMeaning
 
 #dialog for searching the meaning of words (dictionary)
-class TopBookReaderDictionaryDialog(wx.Dialog):
+class TopBookReaderDictionaryDialog(Dialog):
     '''
     this class functions like a mini dictionary.
     Has  no parameter.
@@ -24,29 +27,29 @@ class TopBookReaderDictionaryDialog(wx.Dialog):
         super().__init__(None, title='Quick Word Search...')
 
         #instantiate the vertical box sizer
-        vSizer = wx.BoxSizer(wx.VERTICAL)
+        vSizer = BoxSizer(VERTICAL)
 
-        pnl = wx.Panel(self)
+        pnl = Panel(self)
 
-        label = wx.StaticText(pnl, -1, 'Type word to search for:')
-        vSizer.Add(label, 0, wx.ALL | wx.LEFT, 10)
+        label = StaticText(pnl, -1, 'Type word to search for:')
+        vSizer.Add(label, 0, ALL | LEFT, 10)
 
-        self.__wordText = wx.TextCtrl(pnl, wx.ID_ANY, size=(100, 25), style=wx.TE_PROCESS_ENTER)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_wordMeaning, self.__wordText)
-        vSizer.Add(self.__wordText, 0, wx.ALL | wx.LEFT, 5)
+        self.__wordText = TextCtrl(pnl, -1, size=(100, 25), style=TE_PROCESS_ENTER)
+        self.Bind(EVT_TEXT_ENTER, self.on_wordMeaning, self.__wordText)
+        vSizer.Add(self.__wordText, 0, ALL | LEFT, 5)
 
-        searchBtn = wx.Button(pnl, wx.ID_ANY, '&Search word')
-        searchBtn.Bind(wx.EVT_BUTTON, self.on_wordMeaning)
-        vSizer.Add(searchBtn, 0, wx.ALL | wx.LEFT, 5)
+        searchBtn = Button(pnl, -1, '&Search word')
+        searchBtn.Bind(EVT_BUTTON, self.on_wordMeaning)
+        vSizer.Add(searchBtn, 0, ALL | LEFT, 5)
   
-        cancelBtn = wx.Button(pnl, wx.ID_CANCEL, 'Cancel')
-        vSizer.Add(cancelBtn, 0, wx.ALL | wx.LEFT, 10)
+        cancelBtn = Button(pnl, ID_CANCEL, 'Cancel')
+        vSizer.Add(cancelBtn, 0, ALL | LEFT, 10)
 
-        self.__displayMeaningLabel = wx.StaticText(pnl, -1, 'Search result:')
-        vSizer.Add(self.__displayMeaningLabel, 0, wx.ALL | wx.LEFT, 10)
+        self.__displayMeaningLabel = StaticText(pnl, -1, 'Search result:')
+        vSizer.Add(self.__displayMeaningLabel, 0, ALL | LEFT, 10)
 
-        self.__displayMeaning = wx.TextCtrl(pnl, wx.ID_ANY, size=(450, 450), style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
-        vSizer.Add(self.__displayMeaning, 0, wx.ALL | wx.LEFT, 5)
+        self.__displayMeaning = TextCtrl(pnl, -1, size=(450, 450), style=TE_MULTILINE | TE_READONLY | TE_RICH2)
+        vSizer.Add(self.__displayMeaning, 0, ALL | LEFT, 5)
 
         vSizer.SetSizeHints(pnl)
         pnl.SetSizer(vSizer)

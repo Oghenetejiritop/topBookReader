@@ -9,12 +9,13 @@
 '''
 
 
-import wx
+from  wx import (Font, FontData, FontDialog, FONTFAMILY_DEFAULT, FONTSTYLE_ITALIC, FONTWEIGHT_BOLD, ID_OK,
+        TextCtrl, EVT_MOUSEWHEEL, TE_AUTO_URL, TE_MULTILINE, TE_READONLY, TE_RICH2,)
 
 from topBookReaderGui.topBookReaderExtras.topBookReaderFunc import topBookReaderPath
 
 #the text control  that handles displayed contents
-class TopBookReaderContentDisplay(wx.TextCtrl):
+class TopBookReaderContentDisplay(TextCtrl):
     '''
     this class displays contents to the screen.
     Accepts  two parameters;
@@ -23,29 +24,29 @@ class TopBookReaderContentDisplay(wx.TextCtrl):
     '''
 
     def __init__(self, parent, topBookReaderDirectory):
-        super().__init__(parent, wx.ID_ANY, size=(600, 540), style=(wx.TE_MULTILINE | wx.TE_READONLY| wx.TE_RICH2))
+        super().__init__(parent, -1, size=(600, 540), style=(TE_AUTO_URL | TE_MULTILINE | TE_READONLY | TE_RICH2))
         self.__dir = topBookReaderDirectory
         #handle the font data
-        self.__fontProperties = topBookReaderPath(self.__dir, 'topBookReaderFont.pkl')    #stores the font properties in a list
+        fontProperties = topBookReaderPath(self.__dir, 'topBookReaderFont.pkl')    #stores the font properties in a list
         #instantiate the font data
-        self.__fontData = wx.FontData()
+        self.__fontData = FontData()
         #extract the fontProperties 
-        font = wx.Font(self.__fontProperties[0], self.__fontProperties[1], self.__fontProperties[2], self.__fontProperties[3])
+        font = Font(fontProperties[0], fontProperties[1], fontProperties[2], fontProperties[3])
         self.__fontData.SetInitialFont(font)
-        self.__fontData.SetColour(self.__fontProperties[4])
+        self.__fontData.SetColour(fontProperties[4])
         #set the font properties for the display
         self.SetFont(font)
-        self.SetForegroundColour(self.__fontProperties[4])  #sets the text colour
+        self.SetForegroundColour(fontProperties[4])  #sets the text colour
         self.__zoomValue = 1.0
 
-        self.Bind(wx.EVT_MOUSEWHEEL, self.on_mouse_wheel)
+        self.Bind(EVT_MOUSEWHEEL, self.on_mouse_wheel)
 
     #method that managesthe the font adjustment for the content display
     def adjustFont(self):
         #instantiate the font dialog
-        dlg = wx.FontDialog(None, self.__fontData)
+        dlg = FontDialog(None, self.__fontData)
         #when okay is clicked, apply the font changes.
-        if dlg.ShowModal() == wx.ID_OK:
+        if dlg.ShowModal() == ID_OK:
             fontData = dlg.GetFontData()
             fontSelected = fontData.GetChosenFont()
             #adjust the font of the content display
